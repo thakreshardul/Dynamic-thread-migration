@@ -2,11 +2,11 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <time.h>
-#include <sys/time.h>
+#include <sys/stat.h>
 
 
 void dostuff(int); 
@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
   
        if (newsockfd < 0) 
          error("ERROR on accept");
+       printf("Server accepted connection....\n");
          pid = fork();
          if (pid < 0)
            error("ERROR on fork");
@@ -70,22 +71,26 @@ void dostuff (int sock)
 {
   size_t n;
   off_t size;
-  read(sock, &size, 4);
+  printf("reading\n");
+  n = read(sock, &size, sizeof(off_t));
+  printf("reading complete\n");
+  if (n < 0)
+    error("ERROR reading from socket");
+
   char *buffer = (char *)malloc(size);
-  char *input;
-  char *p;
 
-  char *family1[2] = {"aaa", "bbb"};
-  bzero(buffer,256);
 
+  //bzero(buffer,256);
+  printf("reading ckpt\n");
   n = read(sock,buffer,size);
-
+  printf("ckpt read\n");
   if (n < 0)
     error("ERROR reading from socket");
 
   int fd = open("myckpt", O_APPEND | O_WRONLY | O_CREAT, S_IRWXU);
   write(fd, buffer, n);
   close(fd);
-
-  execv("restart", "myckpt");
+  static char *arg[]={"restart","myckpt",NULL};
+  printf("execing\n");
+  execv("./restart", arg);
 }

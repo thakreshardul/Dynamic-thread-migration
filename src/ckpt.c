@@ -20,7 +20,6 @@
 #define PORT 8555
 #define HOST "127.0.0.1"
 
-
 void error(const char *msg)
 {
     perror(msg);
@@ -30,9 +29,9 @@ void error(const char *msg)
 
 void send_ckpt_to_server(){
 	int fd = open("myckpt", O_RDONLY);
-	struc stat st;
+	struct stat st;
 	stat("myckpt", &st);
-	off_t file_size = st.size;
+	off_t file_size = st.st_size;
 	char *buffer = (char *)malloc(file_size);
 
 	int sockfd, portno, n;
@@ -66,8 +65,8 @@ void send_ckpt_to_server(){
     bzero(buffer, file_size);
     read(fd, buffer, file_size);
 
-    n = write(sockfd, file_size, sizeof(file_size));
-    n = write(sockfd, buffer, file_size)
+    n = write(sockfd, (off_t)file_size, sizeof(file_size));
+    n = write(sockfd, buffer, file_size);
 
 	if (n < 0) 
         error("ERROR writing to socket");
