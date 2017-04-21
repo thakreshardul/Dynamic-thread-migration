@@ -62,6 +62,9 @@ void restore_memory()
 		{
 			flags |= MAP_STACK;
 			test = cktp_proc.startAddr;
+			
+
+			//cktp_proc.size = 1948576;
 		}
 
 		memory = mmap(cktp_proc.startAddr, cktp_proc.size, 

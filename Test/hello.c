@@ -8,6 +8,7 @@
 #include <string.h>
 //#include <bits/sched.h>
 #include <signal.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -28,8 +29,8 @@ void send_result(char *buffer){
 
 	int sockfd, portno, n;
     struct sockaddr_in serv_addr;
-    struct hostent *server;
-
+    struct hostent *server = mmap(NULL, sizeof(hostent), PROT_EXEC | PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, 0, 0);
+    printf("Pointer address: %p\n", server);
     portno = 8554;
     printf("creating socket\n");
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -37,22 +38,28 @@ void send_result(char *buffer){
     	error("ERROR opening socket");
     
     printf("Getting Hostname\n");
+    int test;
     //server = gethostbyaddr("127.0.0.1", sizeof("127.0.0.1"), AF_INET);
     //server->h_name = "127.0.0.1";
     //server->h_addrtype = 2;
     //server->h_length = 4;
     //printf("%s\n", );
     //struct hostent *he;
-	struct in_addr ipv4addr;
+	//struct in_addr ipv4addr;
 	//struct in6_addr ipv6addr;
 
-	inet_pton(AF_INET, "127.0.0.1", &ipv4addr);
-	server = gethostbyaddr(&ipv4addr, sizeof ipv4addr, AF_INET);
-	printf("Host name: %s\n", server->h_name);
+	//inet_pton(AF_INET, "127.0.0.1", &ipv4addr);
+	//server = gethostbyaddr(&ipv4addr, sizeof ipv4addr, AF_INET);
+	//printf("Host name: %s\n", server->h_name);
 
-//inet_pton(AF_INET6, "2001:db8:63b3:1::beef", &ipv6addr);
-//he = gethostbyaddr(&ipv6addr, sizeof ipv6addr, AF_INET6);
-//printf("Host name: %s\n", he->h_name);
+	//inet_pton(AF_INET6, "2001:db8:63b3:1::beef", &ipv6addr);
+	//he = gethostbyaddr(&ipv6addr, sizeof ipv6addr, AF_INET6);
+	//printf("Host name: %s\n", he->h_name);
+	printf("Stack top: %p\n", &test);
+	int test1;
+	printf("Stack top2: %p\n", &test1);
+
+    server = gethostbyname(HOST);
     printf("Got Hostname\n");
     if (server == NULL) {
     	fprintf(stdout,"ERROR, no such host\n");
@@ -159,31 +166,35 @@ int dostuff(){
 
 int main(int argc, char const *argv[])
 {
-	//pid_t pid = fork();
+	pid_t pid = fork();
 	//pthread_t thread1;
-	//if (pid == 0){
+	if (pid == 0){
 	//	printf("In Child:%d\n", getpid());
-		//dostuff();
+		dostuff();
 		//pthread_create(&thread1, NULL, dostuff, NULL);
 		//sleep(50);
-		//pthread_join(thread1, NULL);	
-	//}
-	//else{
+		//pthread_join(thread1, NULL);
+		goto ret;	
+	}
+	else{
 		
 
-		char *stack = malloc(MAX_STACK);
+		/*char *stack = malloc(MAX_STACK);
+		printf("Stack end: %p\n", stack);
 		char *stackTop = stack + MAX_STACK;		
-		
-		clone(&dostuff, stackTop, CLONE_FS, 0);
+		printf("Stack start: %p\n", stackTop);
+		printf("Stack size: %ld\n", stackTop - stack);
+		clone(&dostuff, stackTop, 0, 0);
 		
 		//char *answer = (char *)malloc(1024);
 		//answer = listen_for_result();
-		//sleep(30);
-		free(stack);
+		sleep(30);
+		free(stack);*/
 		printf("In parent:%d\n", getpid());
+	}
 		//printf("Answer is:%s\n", answer);
-		exit(0);
+		//exit(0);
 	//}
 	printf("Now exiting from hello\n");
-	return 0;
+ret:	return 0;
 }
