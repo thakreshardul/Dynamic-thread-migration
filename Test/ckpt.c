@@ -44,8 +44,16 @@ void send_ckpt_to_server(){
     if (sockfd < 0) 
     	error("ERROR opening socket");
     
-    	server = gethostbyname(HOST);
-    
+    server = gethostbyname(HOST);
+    /*printf("---------------------------------------------\n");
+	printf("Official name is: %s\n", server->h_name);
+    printf("    IP addresses: ");
+    char **addr_list = server->h_addr_list;
+    for(int i = 0; addr_list[i] != NULL; i++) {
+        printf("%d ", (*addr_list[i]));
+    }
+    printf("---------------------------------------------\n");
+	*/
     if (server == NULL) {
     	fprintf(stderr,"ERROR, no such host\n");
     	exit(0);

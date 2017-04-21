@@ -37,8 +37,22 @@ void send_result(char *buffer){
     	error("ERROR opening socket");
     
     printf("Getting Hostname\n");
-    server = gethostbyname("localhost");
-    printf("%s\n", );
+    //server = gethostbyaddr("127.0.0.1", sizeof("127.0.0.1"), AF_INET);
+    //server->h_name = "127.0.0.1";
+    //server->h_addrtype = 2;
+    //server->h_length = 4;
+    //printf("%s\n", );
+    //struct hostent *he;
+	struct in_addr ipv4addr;
+	//struct in6_addr ipv6addr;
+
+	inet_pton(AF_INET, "127.0.0.1", &ipv4addr);
+	server = gethostbyaddr(&ipv4addr, sizeof ipv4addr, AF_INET);
+	printf("Host name: %s\n", server->h_name);
+
+//inet_pton(AF_INET6, "2001:db8:63b3:1::beef", &ipv6addr);
+//he = gethostbyaddr(&ipv6addr, sizeof ipv6addr, AF_INET6);
+//printf("Host name: %s\n", he->h_name);
     printf("Got Hostname\n");
     if (server == NULL) {
     	fprintf(stdout,"ERROR, no such host\n");
