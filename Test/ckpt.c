@@ -65,7 +65,7 @@ void send_ckpt_to_server(){
     bzero(buffer, file_size);
     read(fd, buffer, file_size);
 
-    n = write(sockfd, (off_t)file_size, sizeof(file_size));
+    n = write(sockfd, (off_t *)file_size, sizeof(file_size));
     n = write(sockfd, buffer, file_size);
 
 	if (n < 0) 

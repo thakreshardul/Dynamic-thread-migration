@@ -99,7 +99,7 @@ void restore_memory()
 void main(int argc, char const *argv[])
 {
 	MemoryRegion proc;
-	VA memory, new_stackAddr = 0x5300000;
+	VA memory, new_stackAddr = (char *)0x5300000;
 	int process = open("/proc/self/maps", O_RDONLY);
 	if (!argv[1])
 	{

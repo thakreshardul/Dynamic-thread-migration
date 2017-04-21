@@ -5,10 +5,126 @@
 #include <stdlib.h>
 //#include <linux/sched.h>
 #include <sched.h>
+#include <string.h>
 //#include <bits/sched.h>
 #include <signal.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
 
 #define MAX_STACK 1048576
+#define HOST "127.0.0.1"
+
+
+void error(const char *msg)
+{
+    perror(msg);
+    exit(1);
+}
+
+
+void send_result(char *buffer){
+
+	int sockfd, portno, n;
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+    portno = 8554;
+    printf("creating socket\n");
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) 
+    	error("ERROR opening socket");
+    
+    printf("Getting Hostname\n");
+    server = gethostbyname("localhost");
+    printf("%s\n", );
+    printf("Got Hostname\n");
+    if (server == NULL) {
+    	fprintf(stdout,"ERROR, no such host\n");
+    	exit(0);
+    }
+    printf("connecting to server\n");
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy((char *)server->h_addr, 
+    (char *)&serv_addr.sin_addr.s_addr,
+    server->h_length);
+
+    serv_addr.sin_port = htons(portno);
+
+    //if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
+    //    error("ERROR connecting");
+    
+    /*int len = strlen(buffer);
+    //n = write(sockfd, &len, sizeof(len));
+    n = write(sockfd, buffer, len);
+
+	if (n < 0) 
+        error("ERROR writing to socket");
+
+    close(sockfd);
+    free(buffer);*/
+    printf("In send_result: %s\n", buffer);
+
+}
+
+/*
+char *listen_for_result(){
+
+	int sockfd, newsockfd, portno, pid;
+     socklen_t clilen;
+     struct sockaddr_in serv_addr, cli_addr;
+     char *buffer;
+
+     sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+     if (sockfd < 0) 
+        error("ERROR opening socket");
+
+     bzero((char *) &serv_addr, sizeof(serv_addr));
+     portno = 8554;//atoi(argv[1]);
+     serv_addr.sin_family = AF_INET;
+     serv_addr.sin_addr.s_addr = INADDR_ANY;
+     serv_addr.sin_port = htons(portno);
+
+     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
+       error("ERROR on binding");
+
+     listen(sockfd,5);
+     clilen = sizeof(cli_addr);
+
+     int listening = 1;
+     while (listening) {
+     	newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+  
+     	if (newsockfd < 0) 
+        	error("ERROR on accept");
+    	printf("Server accepted connection....\n");
+    	size_t rd;
+  		off_t size;
+  		//printf("reading\n");
+  		//rd = read(newsockfd, &size, sizeof(off_t));
+  		//printf("Length is: %d\n", size);
+  		//printf("reading complete\n");
+  		//if (rd < 0)
+    	//	error("ERROR reading from socket");
+
+		buffer = (char *)malloc(1024);
+
+		//bzero(buffer,256);
+  		printf("reading Result\n");
+ 		int n = read(newsockfd, buffer, 6);
+ 		//		close(sockfd);
+  		if (n < 0)
+    		error("ERROR reading from socket");
+    	printf("Answerrrrrrrrrrrr-------------%s\n", buffer);
+  		printf("Result read\n");
+  		listening--;
+  	}
+  	return buffer;
+}
+*/
 
 int dostuff(){
 	printf("cloned\n");
@@ -20,9 +136,11 @@ int dostuff(){
                 sleep(1);
                 counter++;
                 fflush(stdout);
-                if (counter > 20) break;
+                if (counter > 10) break;
         }
-        return 1;
+        //return 1;
+	send_result("Result");
+	return 1;
 }
 
 int main(int argc, char const *argv[])
@@ -37,12 +155,19 @@ int main(int argc, char const *argv[])
 		//pthread_join(thread1, NULL);	
 	//}
 	//else{
+		
+
 		char *stack = malloc(MAX_STACK);
 		char *stackTop = stack + MAX_STACK;		
+		
 		clone(&dostuff, stackTop, CLONE_FS, 0);
-		sleep(30);
+		
+		//char *answer = (char *)malloc(1024);
+		//answer = listen_for_result();
+		//sleep(30);
 		free(stack);
 		printf("In parent:%d\n", getpid());
+		//printf("Answer is:%s\n", answer);
 		exit(0);
 	//}
 	printf("Now exiting from hello\n");

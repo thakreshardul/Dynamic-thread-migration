@@ -92,5 +92,5 @@ void dostuff (int sock)
   close(fd);
   static char *arg[]={"restart","myckpt",NULL};
   printf("execing\n");
-  execv("./restart", arg);
+  execv("./ee", arg);
 }
