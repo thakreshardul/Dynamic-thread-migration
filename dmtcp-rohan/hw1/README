@@ -1,0 +1,16 @@
+The submitted code allows us to restart a process from where it was previously stopped by maintaining a checkpot file.
+
+The code runs properly.
+
+How to run the code:
+
+make / make all - runs the entire code. cleans all binaries. starts a hello process, stops it and then restarts it from the point it was interrupted.
+
+make clean - cleans all binaries
+
+Differences:
+1) mapping all regions with read permission instead of initially filtering out a few
+2) checking for pid - if pid is not the same, checkpointing process wont run
+
+Note:
+The code runs perfectly on my machine. On CCS machine, it restarts the process properly, and then gives an error saying 'recipe for make res failed'. However, the restarting works fine and in gdb as well, the myrestart process if run independently runs without errors.
