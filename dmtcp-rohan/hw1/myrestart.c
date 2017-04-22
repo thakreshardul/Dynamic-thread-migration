@@ -81,7 +81,7 @@ void restore_memory(struct MemoryRegion *mr_myrestart){
 		return;
 	}
 	
-	fclose(loglog);
+	//fclose(loglog);
 	if(setcontext(ucon_ptr)==-1){
 		fprintf(loglog,"Error setting context.\n");
 	}

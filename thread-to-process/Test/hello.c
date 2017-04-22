@@ -101,7 +101,7 @@ void send_result(char *buf){
   	/* Address family = Internet */
   	serverAddr.sin_family = AF_INET;
   	/* Set port number, using htons function to use proper byte order */
-  	serverAddr.sin_port = htons(7891);
+  	serverAddr.sin_port = htons(8554);
   	/* Set IP address to localhost */
   	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
   	/* Set all bits of the padding field to 0 */
@@ -113,10 +113,10 @@ void send_result(char *buf){
   	connect(clientSocket, (struct sockaddr *) &serverAddr, addr_size);
 
   	/*---- Read the message from the server into the buffer ----*/
-  	send(clientSocket, buf, 1024, 0);
+  	send(clientSocket, buf, strlen(buf), 0);
 
 	/*---- Print the received message ----*/
-  	printf("Data received: %s",buf);   
+  	//printf("Data received: %s",buf);   
 
   //return 0;
 
@@ -127,7 +127,7 @@ void send_result(char *buf){
     printf("In send_result: %s\n", buf);
 }
 
-/*
+
 char *listen_for_result(){
 
 	int sockfd, newsockfd, portno, pid;
@@ -182,11 +182,11 @@ char *listen_for_result(){
   	}
   	return buffer;
 }
-*/
 
-int dostuff(){
-	printf("cloned\n");
-	printf("Child PID: %d\n", getpid());
+
+void dostuff(){
+	printf("Forked\n");
+	//printf("Child PID: %d\n", getpid());
 	int counter = 1;
 	while(1)
         {
@@ -197,41 +197,26 @@ int dostuff(){
                 if (counter > 10) break;
         }
         //return 1;
-	//send_result("Result");
-        //exit(0);
-	return 1;
+	send_result("Result");
+  printf("Now exiting child\n");
+  exit(0);
+	//return 1;
 }
 
 int main(int argc, char const *argv[])
 {
-	//pid_t pid = fork();
-	//pthread_t thread1;
-	//if (pid == 0){
-	//	printf("In Child:%d\n", getpid());
-	//	dostuff();
-		//pthread_create(&thread1, NULL, dostuff, NULL);
-		//sleep(50);
-		//pthread_join(thread1, NULL);
-	//	goto ret;	
-	//}
-	//else{
-		
-
-		char *stack = mmap(NULL, MAX_STACK, PROT_EXEC | PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_GROWSDOWN | MAP_SHARED, -1, 0);
-		printf("Stack end: %p\n", stack);
-		char *stackTop = stack + MAX_STACK;		
-		printf("Stack start: %p\n", stackTop);
-		printf("Stack size: %ld\n", stackTop - stack);
-		clone(&dostuff, stack, CLONE_VFORK, 0);
-		
-		//char *answer = (char *)malloc(1024);
-		//answer = listen_for_result();
-		sleep(30);
-		//free(stack);
-		printf("In parent:%d\n", getpid());
-		//printf("Answer is:%s\n", answer);
-		//exit(0);
-	//}
+	pid_t pid = fork();
+	if (pid == 0){
+		printf("In Child:%d\n", getpid());
+		dostuff();
+	}
+	else{
+    int counter = 0;
+		//do{
+      char *ans = (char *)malloc(1024);
+      ans = listen_for_result();
+    //}while(counter < 10000);
+  }
 	printf("Now exiting from hello\n");
-ret:	return 0;
+  return 0;
 }

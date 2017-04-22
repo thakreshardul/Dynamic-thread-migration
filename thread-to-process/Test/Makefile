@@ -16,10 +16,10 @@ libckpt.so: ckpt.o
 	gcc -fno-stack-protector -shared -o libckpt.so ckpt.o
 
 hello.o: hello.c
-	gcc -c -fno-stack-protector -fpic -o hello.o hello.c -lpthread
+	gcc -c -fno-stack-protector -fpic -o hello.o hello.c
 
 hello:	hello.o
-	gcc -g -fno-stack-protector -o hello hello.o -lpthread
+	gcc -g -fno-stack-protector -o hello hello.o
 
 #procthread:
 #	gcc procthread.c -o procthread.o -c
