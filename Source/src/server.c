@@ -87,10 +87,10 @@ void dostuff (int sock)
   if (n < 0)
     error("ERROR reading from socket");
 
-  int fd = open("myckpt", O_APPEND | O_WRONLY | O_CREAT, S_IRWXU);
+  int fd = open("./bin/myckpt", O_APPEND | O_WRONLY | O_CREAT, S_IRWXU);
   write(fd, buffer, n);
   close(fd);
-  static char *arg[]={"restart","myckpt",NULL};
+  static char *arg[]={"restart","./bin/myckpt",NULL};
   printf("execing\n");
-  execv("./restart", arg);
+  execv("./bin/restart", arg);
 }

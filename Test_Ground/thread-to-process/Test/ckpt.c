@@ -20,6 +20,8 @@
 #define PORT 8555
 #define HOST "127.0.0.1"
 
+char* ckpt_path = "./bin/try";
+
 void error(const char *msg)
 {
     perror(msg);
@@ -28,9 +30,9 @@ void error(const char *msg)
 
 
 void send_ckpt_to_server(){
-	int fd = open("myckpt", O_RDONLY);
+	int fd = open(ckpt_path, O_RDONLY);
 	struct stat st;
-	stat("myckpt", &st);
+	stat(ckpt_path, &st);
 	off_t file_size = st.st_size;
 	char *buffer = (char *)malloc(file_size);
 
@@ -95,7 +97,7 @@ void signal_handler (int signal)
 		process = open("/proc/self/maps", O_RDONLY);
 		if (process == -1)
 			fprintf(stderr, "Error openeing /proc/self/maps:%s\n", strerror(errno));
-		checkpoint = open("myckpt", O_APPEND | O_WRONLY | O_CREAT, S_IRWXU);
+		checkpoint = open(ckpt_path, O_APPEND | O_WRONLY | O_CREAT, S_IRWXU);
 		
 		if (checkpoint == -1)
 			fprintf(stderr,"Error opening checkpoint%s\n", strerror(errno));
