@@ -34,7 +34,7 @@ server: restart server.c
 
 ckpt:   libckpt.so hello
 	#(sleep 3 && kill -12 `pgrep -n hello` && sleep 2 && pkill -9 hello) & 
-	LD_PRELOAD=`pwd`/libckpt.so ./hello
+	LD_PRELOAD=`pwd`/libckpt.so ./hello $(x) $(i)
 	#(sleep 6 &&  pkill -9 restart) &
 
 res: 	server
