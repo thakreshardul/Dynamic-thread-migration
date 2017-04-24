@@ -20,7 +20,8 @@ void calculate_binomial(arguments *ptr){
     facti = facti * j;
   }
   double ans = powx/facti;
-  mthread_exit(&ans);
+  printf("answer is %lf\n",ans);
+  mthread_exit(&ans,sizeof(ans));
 }
 
 int main(int argc, char const *argv[])
@@ -29,7 +30,8 @@ int main(int argc, char const *argv[])
   int x = atoi(argv[1]);
   int n = atoi(argv[2]);
   mthread_t thread_id[n];
-  double answer, final = 0;
+  double final = 0;
+  void *answer = malloc(sizeof(double));
   arguments args;
   printf("Calculating result of e^%d for upto %d terms\n",x,n);
   for (int i = 0; i <= n; i++)
@@ -37,13 +39,14 @@ int main(int argc, char const *argv[])
     args.arg1 = x;
     args.arg2 = i;
     mthread_create(&thread_id[i], NULL, (void*)&calculate_binomial, &args);
-  }
-  for (int i = 0; i <=n ; ++i)
-  {
-    mthread_join(&thread_id[i], &answer);
-    final += answer;
+//	sleep(2);
+//  }
+//  for (int i = 0; i <=n ; ++i)
+//  {
+    mthread_join(&thread_id[i], answer);
+    final += *((double*)answer);
   }
   
-  printf("Final answer is: %lf\n",answer);
+  printf("Final answer is: %lf\n",final);
   return 0;
 }
