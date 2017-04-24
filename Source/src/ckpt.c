@@ -24,7 +24,16 @@
 #define HOST "127.0.0.1"
 #define MAX_SERVER 10
 
-static int process_count = 0;
+#define SERVER_SELECT_HOST_1 HOST
+#define SERVER_SELECT_HOST_2 HOST
+#define SERVER_SELECT_HOST_3 HOST
+#define SERVER_SELECT_HOST_4 HOST
+#define SERVER_SELECT_HOST_5 HOST
+#define SELECT_PORT_1 7777
+#define SELECT_PORT_2 7778
+#define SELECT_PORT_3 7779
+#define SELECT_PORT_4 7780
+#define SELECT_PORT_5 7781
 
 static server** server_list;
 
@@ -39,36 +48,36 @@ void error(const char *msg)
 
 server* select_server(int n)
 {
-  char* serv_1  = "127.0.0.1";
-  int port_1 = 7777;
+  char* serv_1  = SERVER_SELECT_HOST_1;
+  int port_1 = SELECT_PORT_1;
   server* server_1 = malloc(sizeof(server));
   server_1->IP = malloc(strlen(serv_1)+1);
   strcpy(server_1->IP, serv_1);
   server_1->port = port_1;
 
-  char* serv_2  = "127.0.0.1";
-  int port_2 = 7778;
+  char* serv_2  = SERVER_SELECT_HOST_2;
+  int port_2 = SELECT_PORT_2;
   server* server_2 = malloc(sizeof(server));
   server_2->IP = malloc(strlen(serv_2)+1);
   strcpy(server_2->IP, serv_2);
   server_2->port = port_2;
 
-  char* serv_3  = "127.0.0.1";
-  int port_3 = 7779;
+  char* serv_3  = SERVER_SELECT_HOST_3;
+  int port_3 = SELECT_PORT_3;
   server* server_3 = malloc(sizeof(server));
   server_3->IP = malloc(strlen(serv_3)+1);
   strcpy(server_3->IP, serv_3);
   server_3->port = port_3;
 
-  char* serv_4  = "127.0.0.1";
-  int port_4 = 7780;
+  char* serv_4  = SERVER_SELECT_HOST_4;
+  int port_4 = SELECT_PORT_4;
   server* server_4 = malloc(sizeof(server));
   server_4->IP = malloc(strlen(serv_4)+1);
   strcpy(server_4->IP, serv_4);
   server_4->port = port_4;
 
-  char* serv_5  = "127.0.0.1";
-  int port_5 = 7781;
+  char* serv_5  = SERVER_SELECT_HOST_5;
+  int port_5 = SELECT_PORT_5;
   server* server_5 = malloc(sizeof(server));
   server_5->IP = malloc(strlen(serv_5)+1);
   strcpy(server_5->IP, serv_5);
@@ -86,7 +95,7 @@ server* select_server(int n)
   // choose server using mod %
   int server_id = n % server_count;
   server* response_server = server_list[server_id];
-  printf("%d\n", server_id);
+//  printf("%d\n", server_id);
 
   return response_server;
 }
@@ -95,10 +104,9 @@ server* select_server(int n)
 void send_ckpt_to_server(){
 	//srand(time(NULL));
   	//int randomnumber = rand() % MAX_SERVER;
-	
-        server* serv = select_server(process_count);
+	printf("requesting server for pid %d\n",getpid());
+        server* serv = select_server(getpid());
         printf("sending to server %s:%d\n", serv->IP,serv->port);
-	process_count++;
 
 	int listenfd = 0;
 	int connfd = 0;
