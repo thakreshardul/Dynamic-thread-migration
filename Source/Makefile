@@ -57,5 +57,5 @@ run-server3:
 
 run-test:
 	export LD_LIBRARY_PATH=`pwd`/$(LIBS):$LD_LIBRARY_PATH
-	LD_PRELOAD=`pwd`/$(LIBS)/libckpt.so $(BUILD)/hello 4 1
+	LD_PRELOAD=`pwd`/$(LIBS)/libckpt.so $(BUILD)/hello 4 0
 

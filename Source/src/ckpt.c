@@ -101,10 +101,10 @@ void send_ckpt_to_server(){
     //while(1)
     //{
         
-        FILE *fp = fopen("myckpt","rb");
+        FILE *fp = fopen("./bin/myckpt","rb");
         if(fp==NULL)
         {
-            printf("File opern error");
+            printf("File open error");
             return;   
         }   
 

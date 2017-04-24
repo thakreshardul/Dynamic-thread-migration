@@ -11,6 +11,7 @@ typedef struct arguments
 }arguments;
 
 void calculate_binomial(arguments *ptr){
+  printf("calculate_binomial: %d^%d\n", ptr->arg1, ptr->arg2);
   double powx = 1;
   double facti = 1;
   int j;

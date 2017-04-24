@@ -96,7 +96,6 @@ int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_rout
 {
   int status;
   mt = malloc(sizeof(mthread_t));
-  process_count++;
 
   // choose server using mod %
   //int server_id = process_count % server_count;
@@ -108,6 +107,7 @@ int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_rout
       perror("Error deleting checkpoint file in process 1");
   }
 
+  process_count++;
 
   pid_t pid = fork();
   if (pid == 0){
@@ -174,7 +174,6 @@ void mthread_exit(void *retval)
   send(clientSocket, retval, strlen(retval), 0);
 
   close(clientSocket);
-  process_count--;
 }
 
 
