@@ -16,11 +16,14 @@
 
 #define MEM 64000
 
+#define PORT 4747
+#define HOST "127.0.0.1"
+
 
 // global data, common for all processes
 static int process_count = 0;
-static int server_count = 0;
-static server** server_list;
+//static int server_count = 0;
+//static server** server_list;
 
 // process specific port for sending response
 static server* response_server;
@@ -33,24 +36,29 @@ void error(const char *msg)
 }
 
 
+int sockfd, portno;
+struct sockaddr_in serv_addr;
+
+
 void mthread_configure()
 {
+/*
   char* serv_1  = "127.0.0.1";
-  int port_1 = 8554;
+  int port_1 = 7777;
   server* server_1 = malloc(sizeof(server));
   server_1->IP = malloc(strlen(serv_1)+1);
   strcpy(server_1->IP, serv_1);
   server_1->port = port_1;
 
   char* serv_2  = "127.0.0.1";
-  int port_2 = 8555;
+  int port_2 = 7778;
   server* server_2 = malloc(sizeof(server));
   server_2->IP = malloc(strlen(serv_2)+1);
   strcpy(server_2->IP, serv_2);
   server_2->port = port_2;
 
   char* serv_3  = "127.0.0.1";
-  int port_3 = 8556;
+  int port_3 = 7779;
   server* server_3 = malloc(sizeof(server));
   server_3->IP = malloc(strlen(serv_3)+1);
   strcpy(server_3->IP, serv_3);
@@ -64,54 +72,66 @@ void mthread_configure()
   server_list[0] = server_1;
   server_list[1] = server_2;
   server_list[2] = server_3;
+*/
+  
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+  if (sockfd < 0) 
+	error("ERROR opening socket");
+
+  bzero((char *) &serv_addr, sizeof(serv_addr));
+  portno = PORT;
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_addr.s_addr = INADDR_ANY;
+  serv_addr.sin_port = htons(portno);
+
+  if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
+    error("ERROR on binding listener");
+
+  listen(sockfd,5);
 }
 
 
 int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_routine) (void *), void *arg)
 {
+  int status;
   mt = malloc(sizeof(mthread_t));
   process_count++;
 
+  // choose server using mod %
+  //int server_id = process_count % server_count;
+  //response_server = server_list[server_id];
+
+  if(process_count > 0){
+    status = remove("./bin/myckpt");  
+    if(status != 0)
+      perror("Error deleting checkpoint file in process 1");
+  }
+
+
   pid_t pid = fork();
   if (pid == 0){
-        // choose server using mod %
-	int server_id = process_count % server_count;
-	response_server = server_list[server_id];
+        int selfpid = getpid();
+        sleep(2);
+	
+ 	// raise signal for checkpoint
+	raise(SIGUSR2);
+        sleep(2);
+
+	status = remove("./bin/myckpt");
+	if(status != 0)
+	  perror("Error deleting checkpoint file in process 2");
+
+        
 
 	// call the funtions requested to be run in thread
 	(*start_routine)(arg);
 
- 	// raise signal for checkpoint
-	raise(SIGUSR2);
+	kill(selfpid, SIGTSTP);
+	kill(getpid(),SIGTSTP);
   }
   else{
-	int sockfd, portno;
-     	struct sockaddr_in serv_addr, cli_addr;
-
-     	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-     	if (sockfd < 0) 
-        	error("ERROR opening socket");
-
-     	bzero((char *) &serv_addr, sizeof(serv_addr));
-     	portno = 8554;
-     	serv_addr.sin_family = AF_INET;
-     	serv_addr.sin_addr.s_addr = INADDR_ANY;
-     	serv_addr.sin_port = htons(portno);
-
-     	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
-     		error("ERROR on binding listener");
-
-     	listen(sockfd,5);
-
-	socklen_t clilen = sizeof(cli_addr);
-	int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-	if (newsockfd < 0) {
-      	  error("ERROR on accept");
-        }
-
         mt->pid = pid;
-	mt->sockID = newsockfd;
   }
 
   return 0;
@@ -120,9 +140,14 @@ int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_rout
 
 int mthread_join(mthread_t* mt, void *retval)
 {
-
+  struct sockaddr_in cli_addr;
+  socklen_t clilen = sizeof(cli_addr);
+  int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+  if (newsockfd < 0) {
+     error("ERROR on accept");
+  }
   retval = malloc(1024);
-  int n = read(mt->sockID, retval, 1024);
+  int n = read(newsockfd, retval, 1024);
   if (n < 0)
     error("ERROR reading from socket");
 
@@ -149,6 +174,7 @@ void mthread_exit(void *retval)
   send(clientSocket, retval, strlen(retval), 0);
 
   close(clientSocket);
+  process_count--;
 }
 
 

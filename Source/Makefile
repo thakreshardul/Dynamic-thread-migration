@@ -37,7 +37,7 @@ hello : build-dirs
 	$(CC) $(CFLAGS) -I$(SRC) -c -o $(BUILD)/$@.o $(TEST)/$@.c 
 	$(CC) $(CFLAGS) -I$(SRC) -o $(BUILD)/$@ $(BUILD)/$@.o
 
-clean: 
+clean:  clean-lib
 	rm -rf $(BUILD)
 
 clean-lib: 
@@ -46,10 +46,16 @@ clean-lib:
 
 all: 	build-dirs mthread restart server build-lib hello
 	
-run-server: 	
+run-server1: 	
 	$(BUILD)/server 8555
+
+run-server2: 	
+	$(BUILD)/server 8556
+
+run-server3: 	
+	$(BUILD)/server 8557
 
 run-test:
 	export LD_LIBRARY_PATH=`pwd`/$(LIBS):$LD_LIBRARY_PATH
-	LD_PRELOAD=`pwd`/$(LIBS)/libckpt.so $(BUILD)/hello 4 3
+	LD_PRELOAD=`pwd`/$(LIBS)/libckpt.so $(BUILD)/hello 4 1
 

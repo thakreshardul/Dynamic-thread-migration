@@ -7,7 +7,6 @@ typedef struct server server;
 
 struct mthread_t{
   pid_t pid;
-  int sockID;
   server sv;
 };
 typedef struct mthread_t mthread_t;

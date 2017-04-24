@@ -28,7 +28,7 @@ void error(const char *msg)
     exit(1);
 }
 
-
+/*
 void send_ckpt_to_server(){
 	int fd = open(ckpt_path, O_RDONLY);
 	struct stat st;
@@ -47,15 +47,7 @@ void send_ckpt_to_server(){
     	error("ERROR opening socket");
     
     server = gethostbyname(HOST);
-    /*printf("---------------------------------------------\n");
-	printf("Official name is: %s\n", server->h_name);
-    printf("    IP addresses: ");
-    char **addr_list = server->h_addr_list;
-    for(int i = 0; addr_list[i] != NULL; i++) {
-        printf("%d ", (*addr_list[i]));
-    }
-    printf("---------------------------------------------\n");
-	*/
+ 
     if (server == NULL) {
     	fprintf(stderr,"ERROR, no such host\n");
     	exit(0);
@@ -83,6 +75,72 @@ void send_ckpt_to_server(){
 
     close(sockfd);
     free(buffer);
+}
+*/
+
+void send_ckpt_to_server(){
+	//printf("In send_ckpt_to_server\n");
+	int listenfd = 0;
+	int connfd = 0;
+	struct sockaddr_in serv_addr;
+	char sendBuffer[4096];
+	int numrv;
+
+	listenfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	//printf("Socket retrieve success\n");
+
+	memset(&serv_addr, '0', sizeof(serv_addr));
+	memset(sendBuffer, '0', sizeof(sendBuffer));
+
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = inet_addr(HOST); ////M2 ka IP
+	serv_addr.sin_port = htons(PORT);
+
+	
+    //while(1)
+    //{
+        
+        FILE *fp = fopen("myckpt","rb");
+        if(fp==NULL)
+        {
+            printf("File opern error");
+            return;   
+        }   
+
+	  if(connect(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0){
+
+		printf("\n Error : Connect Failed \n");
+        return;
+       }else{
+	printf("Sending checkpoint image to server\n");
+       while(1)
+        {
+            int nread = fread(sendBuffer,1,4096,fp);
+            //printf("Bytes read %d \n", nread);        
+
+            if(nread > 0)
+            {
+                //printf("Sending \n");
+                
+                write(listenfd, sendBuffer, nread);
+            }
+
+            if (nread < 4096)
+            {
+                if (ferror(fp))
+                    printf("Error reading\n");
+                break;
+            }
+
+
+        }
+		//printf("All bytes sent. closing connection\n");
+        //close(listenfd);
+        sleep(1);
+
+	}
+
 }
 
 
