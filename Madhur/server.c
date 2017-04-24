@@ -7,7 +7,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/stat.h>
+#include <signal.h>
 
+int count = 0;
 
 void dostuff(int); 
 
@@ -17,83 +19,96 @@ void error(const char *msg)
     exit(1);
 }
 
+int cpid=0;
+int ppid=0;
+
+int signal_child_handler(int sig){
+    if(cpid!=0){
+      //printf("in server handler cpid is %d\n", cpid);
+      kill(cpid,SIGTSTP);
+      cpid=0;
+    }
+}
+
 
 int main(int argc, char *argv[])
 {
-     int sockfd, newsockfd, portno, pid;
-     socklen_t clilen;
-     struct sockaddr_in serv_addr, cli_addr;
+  //printf("server pid is %d\n", getpid());
+	int sockfd = 0;
+    int connfd = 0;
+    int bytesReceived = 0;
+//    memset(recvBuff, '0', sizeof(recvBuff));
+    struct sockaddr_in serv_addr;
 
-     if (argc < 2) {
-         fprintf(stderr,"ERROR, no port provided\n");
-         exit(1);
-     }
+	if((sockfd = socket(AF_INET, SOCK_STREAM, 0))< 0)
+    {
+        printf("\n Error : Could not create socket \n");
+        return 1;
+    }
 
-     sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	/* Initialize sockaddr_in data structure */
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(atoi(argv[1])); // port
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-     if (sockfd < 0) 
-        error("ERROR opening socket");
+bind(sockfd, (struct sockaddr*)&serv_addr,sizeof(serv_addr));
+	
+	//printf("Binding done\n");
+	if(listen(sockfd, 10) == -1)
+    {
+        printf("Failed to listen\n");
+        return;
+    }
+	//printf("Listening...\n");
+    printf("Server started on port %d\n", atoi(argv[1]));
+  signal(SIGUSR1,signal_child_handler);
+    while(1){
+        printf("Listening for new connection...\n");
+		connfd = accept(sockfd, (struct sockaddr*)NULL ,NULL);
 
-     bzero((char *) &serv_addr, sizeof(serv_addr));
-     portno = atoi(argv[1]);
-     serv_addr.sin_family = AF_INET;
-     serv_addr.sin_addr.s_addr = INADDR_ANY;
-     serv_addr.sin_port = htons(portno);
+		//printf("connection accepted\n");
 
-     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
-       error("ERROR on binding");
-
-     listen(sockfd,5);
-     clilen = sizeof(cli_addr);
-
-     while (1) {
-       newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-  
-       if (newsockfd < 0) 
-         error("ERROR on accept");
-       printf("Server accepted connection....\n");
-         pid = fork();
-         if (pid < 0)
-           error("ERROR on fork");
-         if (pid == 0){
-           close(sockfd);
-           dostuff(newsockfd);
-	   close(newsockfd);
-           exit(0);
-         }
-         else
-           close(newsockfd);
-     }/* end of while */
-     close(sockfd);
-     return 0; /* we never get here */
+	 /* Attempt a connection */
+      int pid =fork();
+		  if(pid == 0){
+        //printf("server forked child pid is %d\n", getpid());
+        cpid = getpid();
+        dostuff(connfd);
+        close(connfd);
+        exit(0);
+      }else{
+        close(connfd);
+      }
+	}
+	return 0;
 }
 
-void dostuff (int sock)
+void dostuff (int sockfd)
 {
-  size_t n;
-  off_t size;
-  printf("reading\n");
-  n = read(sock, &size, sizeof(off_t));
-  printf("size of ckpt received is %ld and number of bytes read is %ld\n",size,n);
-  printf("reading complete\n");
-  if (n < 0)
-    error("ERROR reading from socket");
+	int bytesReceived;
+	//printf("In dostuff\n");
 
-  char *buffer = (char *)malloc(size*sizeof(char));
+	char recvBuffer[4096];
+	int fd = open("myckpt0", O_APPEND | O_WRONLY | O_CREAT, S_IRWXU);
+	
+	//printf("Opening myckpt0 file\n");
+	while((bytesReceived = read(sockfd, recvBuffer, 4096)) > 0)
+    {
+        //printf("Bytes received %d\n",bytesReceived);    
+        count++;
+		write(fd,recvBuffer,bytesReceived);
+    }
 
-
-  //bzero(buffer,256);
-  printf("reading ckpt\n");
-  n = read(sock,buffer,size);
-  printf("number of bytes read from buffer %ld\n",n);
-  printf("ckpt read\n");
-  if (n < 0)
-    error("ERROR reading from socket");
-
-  int fd = open("myckpt", O_APPEND | O_WRONLY | O_CREAT, S_IRWXU);
-  write(fd, buffer, size);
-  close(fd);
-  static char *arg[]={"restart","myckpt",NULL};
-  printf("execing\n");
-  execv("./restart", arg);
+    if(bytesReceived < 0)
+    {
+        printf("\n Read Error \n");
+    }
+	close(fd);
+    //printf("count: %d\n",count);
+	//printf("on server forked child before exec pid is %d \n", getpid());
+	//return;
+    static char *arg[]={"restart","myckpt0",NULL};
+    //printf("execing\n");
+    printf("Checkpoint image restarted\n");
+    execv("./restart", arg);
 }

@@ -17,6 +17,16 @@
 #define MAX_STACK 1048576
 #define HOST "127.0.0.1"
 
+int cpid=0;
+int ppid=0;
+
+int signal_child_handler(int sig){
+    if(cpid!=0){
+      //printf("in handler cpid is %d\n", cpid);
+      kill(cpid,SIGTSTP);
+      cpid=0;
+    }
+}
 
 void error(const char *msg)
 {
@@ -26,7 +36,6 @@ void error(const char *msg)
 
 
 void send_result(void *buf){
-        
 	int clientSocket;
   	//char buffer[1024];
   	struct sockaddr_in serverAddr;
@@ -48,12 +57,15 @@ void send_result(void *buf){
 
   	/*---- Connect the socket to the server using the address struct ----*/
   	addr_size = sizeof serverAddr;
-  	printf("Connecting.....\n");
+  	//printf("Connecting.....\n");
   	connect(clientSocket, (struct sockaddr *) &serverAddr, addr_size);
   	/*---- Read the message from the server into the buffer ----*/
-	printf("in send_result\n");
+	  //printf("in send_result\n");
   	send(clientSocket, buf, strlen(buf), 0);
+
+	//printf("sent\n");
 	close(clientSocket);
+	//printf("closing\n");
 }
 
 
@@ -80,51 +92,54 @@ char *listen_for_result(int sockfd, struct sockaddr_in * cli_addr, socklen_t * c
 }
 
 
-void dostuff(int x, int i){
-	printf("Forked\n");
+void dostuff(int x, int term){
+	//printf("Forked %d %d\n",x,term);
 	int counter = 1;
         
-	while(1)
-        {
-        	printf("%d\t", counter);
-                if(counter == 5){
-			printf("killing process %d\n", getpid());
+	while(1){
+  	//printf("%d\t", counter);
+    if(counter == 2){
+			//printf("checkpointing process %d\n", getpid());
 			kill(getpid(), SIGUSR2);
-			printf("after killing process %d\n", getpid());
-                        int status;
+			//printf("after checkpointing process %d\n", getpid());
+      int status;
    			
-   			status = remove("myckpt");
+ 			status = remove("myckpt0");
  
-   			if( status == 0 )
-      				printf("myckpt file deleted successfully.\n");
-			   else
-			   {
-			      printf("Unable to delete the file\n");
-			      perror("Error");
-			   }
+ 			if( status != 0 ){
+				perror("Error");
 			}
-                sleep(1);
-                counter++;
-                fflush(stdout);
-                if (counter > 7) break;
-        }
-        double powx = 1;
+		}
+    sleep(1);
+    counter++;
+    fflush(stdout);
+    if (counter > 4) break;
+  }
+  double powx = 1;
 	double facti = 1;
-        int j;
-        for(j = 1; j <= i ;j++){
+  int j;
+  for(j = 1; j <= term ;j++){
 		powx = powx * x;
 		facti = facti * j;
 	}
 	double ans = powx/facti;
-        char resc[100];
-        sprintf(resc, "%lf", ans);
+  printf("Sending back %d term: %lf", term, ans);
+	//double ans = 27.963;        
+	char resc[100];
+  sprintf(resc, "%lf", ans);
+  //printf("%d %d %lf sending %s\n", x,term,ans, resc);
+
 	send_result(resc);
-  exit(0);
+	//printf("back in do stuff after sending result\n");
+  //exit(0);
+  //kill(getpid(), SIGKILL);
+  //raise(SIGKILL);
 }
 
 int main(int argc, char const *argv[])
 {
-
+  ppid = getpid();
+  //printf("ppid is %d\n", ppid);
 	int sockfd, newsockfd, portno, pid;
      socklen_t clilen;
      struct sockaddr_in serv_addr, cli_addr;
@@ -151,28 +166,48 @@ int main(int argc, char const *argv[])
 
 	int x = atoi(argv[1]);
 	int n = atoi(argv[2]);
+  printf("Calculating result of e^%d for upto %d terms\n",x,n);
 	int iterator;
 	double answer = 0;
+  signal(SIGUSR1,signal_child_handler);
 	for(iterator=0;iterator<=n;iterator++){
-		pid_t pid = fork();
+    pid_t pid = fork();
         
 		if (pid == 0){
-			printf("In Child:%d\n", getpid());
+      int selfpid = getpid();
+			//printf("In Child:%d\n", selfpid);
 			dostuff(x,iterator);
+			//printf("back in main\n");
+      cpid=selfpid;
+      //printf("child pid stored is %d and current pid is %d and parent pid is %d\n", cpid,getpid(),getppid());
+      //printf("sending SIGUSR1 to parent\n");
+      int status;
+        
+      status = remove("myckpt");
+ 
+      if( status != 0 ){
+        printf("Unable to delete the file\n");
+        perror("Error");
+      }
+        
+      kill(ppid,SIGUSR1);
+      kill(getpid(),SIGTSTP);
+      //sleep(2);
 		}
 		else{
     			int counter = 0;
-      			char *ans = (char *)malloc(1024);
-      			ans = listen_for_result(sockfd, &cli_addr, &clilen);
-      			double dubAns;
-   	    	         sscanf(ans, "%lf" , &dubAns);
-      			printf("received one term: %lf\n", dubAns);
-			answer += dubAns;
+          char *ans = (char *)malloc(1024);
+      		ans = listen_for_result(sockfd, &cli_addr, &clilen);
+      		double dubAns;
+   	    	sscanf(ans, "%lf" , &dubAns);
+      		//printf("received one term: %lf\n", dubAns);
+          printf("Term %d of e^%d: %lf\n", iterator, x, dubAns);
+			    answer += dubAns;
   		}
-		printf("sleeping for 1 second\n");
+		//printf("sleeping for 1 second\n");
 		sleep(1);
 	}
-	printf("Final answer is %lf\n",answer);
-	printf("Now exiting from hello\n");
+	printf("Final answer is: %lf\n",answer);
+	//printf("Now exiting from hello\n");
   return 0;
 }

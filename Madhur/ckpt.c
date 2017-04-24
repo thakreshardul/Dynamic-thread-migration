@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <arpa/inet.h>
 
 //For socket communication
 #include <sys/socket.h>
@@ -28,67 +29,74 @@ void error(const char *msg)
 
 
 void send_ckpt_to_server(){
-	int fd = open("myckpt", O_RDONLY);
-	struct stat st;
-	stat("myckpt", &st);
-	off_t file_size = st.st_size;
-	char *buffer = (char *)malloc(file_size);
+	//printf("In send_ckpt_to_server\n");
+	int listenfd = 0;
+	int connfd = 0;
+	struct sockaddr_in serv_addr;
+	char sendBuffer[4096];
+	int numrv;
 
-	int sockfd, portno, n;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
+	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 
-    portno = PORT;
+	//printf("Socket retrieve success\n");
 
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) 
-    	error("ERROR opening socket");
-    
-    server = gethostbyname(HOST);
-    /*printf("---------------------------------------------\n");
-	printf("Official name is: %s\n", server->h_name);
-    printf("    IP addresses: ");
-    char **addr_list = server->h_addr_list;
-    for(int i = 0; addr_list[i] != NULL; i++) {
-        printf("%d ", (*addr_list[i]));
-    }
-    printf("---------------------------------------------\n");
-	*/
-    if (server == NULL) {
-    	fprintf(stderr,"ERROR, no such host\n");
-    	exit(0);
-    }
+	memset(&serv_addr, '0', sizeof(serv_addr));
+	memset(sendBuffer, '0', sizeof(sendBuffer));
 
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, 
-    (char *)&serv_addr.sin_addr.s_addr,
-    server->h_length);
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serv_addr.sin_port = htons(PORT);
 
-    serv_addr.sin_port = htons(portno);
+	
+    //while(1)
+    //{
+        
+        FILE *fp = fopen("myckpt","rb");
+        if(fp==NULL)
+        {
+            printf("File opern error");
+            return;   
+        }   
 
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
+	  if(connect(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0){
 
-    bzero(buffer, file_size);
-    read(fd, buffer, file_size);
-	printf("file size sent to server %ld\n",file_size);
+		printf("\n Error : Connect Failed \n");
+        return;
+       }else{
+	printf("Sending checkpoint image to server\n");
+       while(1)
+        {
+            int nread = fread(sendBuffer,1,4096,fp);
+            //printf("Bytes read %d \n", nread);        
 
-    n = write(sockfd, &file_size, sizeof(off_t));
-    n = write(sockfd, buffer, file_size);
-	printf("size sent to server %ld and size of buffer %ld\n",n,strlen(buffer));
+            if(nread > 0)
+            {
+                //printf("Sending \n");
+                
+                write(listenfd, sendBuffer, nread);
+            }
 
-	if (n < 0) 
-        error("ERROR writing to socket");
+            if (nread < 4096)
+            {
+                if (ferror(fp))
+                    printf("Error reading\n");
+                break;
+            }
 
-    close(sockfd);
-    free(buffer);
+
+        }
+		//printf("All bytes sent. closing connection\n");
+        //close(listenfd);
+        sleep(1);
+
+	}
+
 }
 
 
 void signal_handler (int signal)
 {
-	printf("-----------------IN SIGNAL HANDLER-----------------\n");
+	//printf("-----------------IN SIGNAL HANDLER-----------------\n");
 	if (signal == SIGUSR2)
 	{
 		int process, checkpoint;
