@@ -47,15 +47,21 @@ clean-lib:
 all: 	build-dirs mthread restart server build-lib hello
 	
 run-server1: 	
-	$(BUILD)/server 8555
+	$(BUILD)/server 7777
 
 run-server2: 	
-	$(BUILD)/server 8556
+	$(BUILD)/server 7778
 
 run-server3: 	
-	$(BUILD)/server 8557
+	$(BUILD)/server 7779
+
+run-server4: 	
+	$(BUILD)/server 7780
+
+run-server5: 	
+	$(BUILD)/server 7781
 
 run-test:
 	export LD_LIBRARY_PATH=`pwd`/$(LIBS):$LD_LIBRARY_PATH
-	LD_PRELOAD=`pwd`/$(LIBS)/libckpt.so $(BUILD)/hello 4 3
+	LD_PRELOAD=`pwd`/$(LIBS)/libckpt.so $(BUILD)/hello 4 2
 

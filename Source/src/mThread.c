@@ -11,7 +11,7 @@
 #include <sched.h>
 #include <sched.h>
 #include <string.h>
-#include <stdio.h>
+#include <stdlib.h>
 #include <mThread.h>
 
 #define MEM 64000
@@ -19,11 +19,9 @@
 #define PORT 4747
 #define HOST "127.0.0.1"
 
-
 // global data, common for all processes
 static int process_count = 0;
-//static int server_count = 0;
-//static server** server_list;
+
 
 // process specific port for sending response
 static server* response_server;
@@ -41,39 +39,7 @@ static struct sockaddr_in serv_addr;
 
 
 void mthread_configure()
-{
-/*
-  char* serv_1  = "127.0.0.1";
-  int port_1 = 7777;
-  server* server_1 = malloc(sizeof(server));
-  server_1->IP = malloc(strlen(serv_1)+1);
-  strcpy(server_1->IP, serv_1);
-  server_1->port = port_1;
-
-  char* serv_2  = "127.0.0.1";
-  int port_2 = 7778;
-  server* server_2 = malloc(sizeof(server));
-  server_2->IP = malloc(strlen(serv_2)+1);
-  strcpy(server_2->IP, serv_2);
-  server_2->port = port_2;
-
-  char* serv_3  = "127.0.0.1";
-  int port_3 = 7779;
-  server* server_3 = malloc(sizeof(server));
-  server_3->IP = malloc(strlen(serv_3)+1);
-  strcpy(server_3->IP, serv_3);
-  server_3->port = port_3;
-
-  // if you add more servers, increment this count 
-  // and add the servers to list
-  server_count = 3;
-
-  server_list = malloc(server_count * sizeof(server));
-  server_list[0] = server_1;
-  server_list[1] = server_2;
-  server_list[2] = server_3;
-*/
-  
+{ 
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
   if (sockfd < 0) 
@@ -95,10 +61,6 @@ int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_rout
 {
   int status;
   mt = malloc(sizeof(mthread_t));
-
-  // choose server using mod %
-  //int server_id = process_count % server_count;
-  //response_server = server_list[server_id];
 
   if(process_count > 0){
     status = remove("./bin/myckpt");  

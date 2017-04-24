@@ -1,14 +1,17 @@
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <ucontext.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <sys/types.h>
+//#include <dirent.h>
+#include <mThread.h>
+#include <stdlib.h>
+#include <time.h>
 
 //For socket communication
 #include <sys/socket.h>
@@ -19,6 +22,11 @@
 
 #define PORT 8555
 #define HOST "127.0.0.1"
+#define MAX_SERVER 10
+
+static int process_count = 0;
+
+static server** server_list;
 
 char* ckpt_path="./bin/myckpt";
 
@@ -28,60 +36,9 @@ void error(const char *msg)
     exit(1);
 }
 
-/*
-void send_ckpt_to_server(){
-	int fd = open(ckpt_path, O_RDONLY);
-	struct stat st;
-	stat(ckpt_path, &st);
-	off_t file_size = st.st_size;
-	char *buffer = (char *)malloc(file_size);
 
-	int sockfd, portno, n;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
-
-    portno = PORT;
-
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) 
-    	error("ERROR opening socket");
-    
-    server = gethostbyname(HOST);
- 
-    if (server == NULL) {
-    	fprintf(stderr,"ERROR, no such host\n");
-    	exit(0);
-    }
-
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, 
-    (char *)&serv_addr.sin_addr.s_addr,
-    server->h_length);
-
-    serv_addr.sin_port = htons(portno);
-
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
-
-    bzero(buffer, file_size);
-    read(fd, buffer, file_size);
-
-    n = write(sockfd, (off_t *)file_size, sizeof(file_size));
-    n = write(sockfd, buffer, file_size);
-
-	if (n < 0) 
-        error("ERROR writing to socket");
-
-    close(sockfd);
-    free(buffer);
-}
-*/
-
-/*
-void select_server()
+server* select_server(int n)
 {
-  
   char* serv_1  = "127.0.0.1";
   int port_1 = 7777;
   server* server_1 = malloc(sizeof(server));
@@ -103,22 +60,46 @@ void select_server()
   strcpy(server_3->IP, serv_3);
   server_3->port = port_3;
 
-  // if you add more servers, increment this count 
-  // and add the servers to list
-  server_count = 3;
+  char* serv_4  = "127.0.0.1";
+  int port_4 = 7780;
+  server* server_4 = malloc(sizeof(server));
+  server_4->IP = malloc(strlen(serv_4)+1);
+  strcpy(server_4->IP, serv_4);
+  server_4->port = port_4;
+
+  char* serv_5  = "127.0.0.1";
+  int port_5 = 7781;
+  server* server_5 = malloc(sizeof(server));
+  server_5->IP = malloc(strlen(serv_5)+1);
+  strcpy(server_5->IP, serv_5);
+  server_5->port = port_5;
+
+  int server_count = 5;
 
   server_list = malloc(server_count * sizeof(server));
   server_list[0] = server_1;
   server_list[1] = server_2;
   server_list[2] = server_3;
+  server_list[3] = server_4;
+  server_list[4] = server_5;
 
   // choose server using mod %
-  int server_id = process_count % server_count;
-  response_server = server_list[server_id];
+  int server_id = n % server_count;
+  server* response_server = server_list[server_id];
+  printf("%d\n", server_id);
+
+  return response_server;
 }
-*/
+
+
 void send_ckpt_to_server(){
-	//printf("In send_ckpt_to_server\n");
+	//srand(time(NULL));
+  	//int randomnumber = rand() % MAX_SERVER;
+	
+        server* serv = select_server(process_count);
+        printf("sending to server %s:%d\n", serv->IP,serv->port);
+	process_count++;
+
 	int listenfd = 0;
 	int connfd = 0;
 	struct sockaddr_in serv_addr;
@@ -133,12 +114,9 @@ void send_ckpt_to_server(){
 	memset(sendBuffer, '0', sizeof(sendBuffer));
 
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = inet_addr(HOST); ////M2 ka IP
-	serv_addr.sin_port = htons(PORT);
+	serv_addr.sin_addr.s_addr = inet_addr(serv->IP); ////M2 ka IP
+	serv_addr.sin_port = htons(serv->port);
 
-	
-    //while(1)
-    //{
         
         FILE *fp = fopen("./bin/myckpt","rb");
         if(fp==NULL)
@@ -165,21 +143,15 @@ void send_ckpt_to_server(){
                 write(listenfd, sendBuffer, nread);
             }
 
-            if (nread < 4096)
-            {
-                if (ferror(fp))
-                    printf("Error reading\n");
-                break;
-            }
-
-
+      if (nread < 4096)
+      {
+         if (ferror(fp))
+           printf("Error reading\n");
+         break;
         }
-		//printf("All bytes sent. closing connection\n");
-        //close(listenfd);
-        sleep(1);
-
-	}
-
+      }
+    sleep(1);
+  }
 }
 
 
