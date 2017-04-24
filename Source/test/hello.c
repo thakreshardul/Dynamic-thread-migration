@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mThread.h>
+#include <mThread.c>
 
 typedef struct arguments
 {

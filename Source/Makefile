@@ -11,14 +11,17 @@ build-dirs:
 	mkdir -p $(BUILD) 
 	mkdir -p $(LIBS) 
 
-lib-mThread: $(INCLUDE)/mThread.h $(SRC)/mThread.c
-	$(CC) $(CFLAGS) -fpic -c -o $(BUILD)/mThread.o $(SRC)/mThread.c
-	$(CC) $(CFLAGS) -shared -fpic -o $(LIBS)/libmThread.so $(BUILD)/mThread.o
+#lib-mThread: $(INCLUDE)/mThread.h $(SRC)/mThread.c
+#	$(CC) $(CFLAGS) -fpic -c -o $(BUILD)/mThread.o $(SRC)/mThread.c
+#	$(CC) $(CFLAGS) -shared -fpic -o $(LIBS)/libmThread.so $(BUILD)/mThread.o
+
+mthread: $(INCLUDE)/mThread.h $(SRC)/mThread.c
+	$(CC) $(CFLAGS) -c -o $(BUILD)/mThread.o $(SRC)/mThread.c
 
 lib-ckpt: ckpt.o
 	$(CC) -fno-stack-protector -shared -o $(LIBS)/libckpt.so $(BUILD)/ckpt.o
 
-build-lib: lib-mThread lib-ckpt
+build-lib: lib-ckpt
 
 ckpt.o: $(SRC)/ckpt.c
 	$(CC) $(CFLAGS) -fno-stack-protector -c -fpic -o $(BUILD)/ckpt.o $(SRC)/ckpt.c
@@ -31,21 +34,22 @@ server: build-dirs restart $(SRC)/server.c
 	$(CC) $(CFLAGS) -o $(BUILD)/$@ $(SRC)/$@.c
 
 hello : build-dirs
-	$(CC) $(CFLAGS) -c -o $(BUILD)/$@.o $(TEST)/$@.c 
-	$(CC) $(CFLAGS) -L$(LIBS) -o $(BUILD)/$@ $(BUILD)/$@.o -lmThread
+	$(CC) $(CFLAGS) -I$(SRC) -c -o $(BUILD)/$@.o $(TEST)/$@.c 
+	$(CC) $(CFLAGS) -I$(SRC) -o $(BUILD)/$@ $(BUILD)/$@.o
 
 clean: 
 	rm -rf $(BUILD)
 
 clean-lib: 
-	rm $(LIBS)/libmThread.so
 	rm $(LIBS)/libckpt.so
 
 
-all: 	build-dirs restart server build-lib hello
+all: 	build-dirs mthread restart server build-lib hello
 	
 run-server: 	
 	$(BUILD)/server 8555
 
 run-test:
-	LD_PRELOAD="$(LIBS)/libckpt.so $(LIBS)/libmThread.so" $(BUILD)/hello -lmThread
+	export LD_LIBRARY_PATH=`pwd`/$(LIBS):$LD_LIBRARY_PATH
+	LD_PRELOAD=`pwd`/$(LIBS)/libckpt.so $(BUILD)/hello 4 3
+
