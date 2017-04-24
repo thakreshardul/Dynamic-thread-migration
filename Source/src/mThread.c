@@ -12,21 +12,24 @@
 #include <sched.h>
 #include <strings.h>
 #include <avcall.h>
+#include <pthread.h>
 
-// keep track of multiple servers
 
 #define MEM 64000
+#define MAX_THREADS 100
 
 
 struct mthread_t{
   pid_t pid;
 };
 
-typedef struct mthread_t mthread_t;
 
+typedef struct mthread_t mthread_t;
 typedef	void * (*pthread_startroutine_t)(void *);
 typedef void * pthread_addr_t;
 
+static int* sockets = malloc(MAX_THREADS * sizeof(int));
+static pthread_t socket_listeners;
 
 char *listen_for_result(int sockfd, struct sockaddr_in * cli_addr, socklen_t * clilen);
 
@@ -38,7 +41,7 @@ void error(const char *msg)
 }
 
 
-int mthread_create(mthread_t *mt, const pthread_attr_t *attr,
+int mthread_create(mthread_t *mt, const mthread_attr_t *attr,
                           void *(*start_routine) (void *), void *arg)
 {
   pid_t pid = fork();
@@ -68,7 +71,6 @@ int mthread_create(mthread_t *mt, const pthread_attr_t *attr,
      	listen(sockfd,5);
   }
   
-  
   mt = malloc(sizeof(mthread_t));
   mt->pid = pid;
 
@@ -76,9 +78,8 @@ int mthread_create(mthread_t *mt, const pthread_attr_t *attr,
 }
 
 
-char *listen_for_result(int sockfd, struct sockaddr_in * cli_addr, socklen_t * clilen){
-
-	
+char *listen_for_result(int sockfd, struct sockaddr_in * cli_addr, socklen_t * clilen)
+{
      int newsockfd;
      int listening = 1;
      char *buffer;
