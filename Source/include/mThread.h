@@ -22,4 +22,4 @@ int mthread_create(mthread_t *mt, const mthread_attr_t *attr,
 
 int mthread_join(mthread_t* thread, void *retval);
 
-void mthread_exit(void *retval);
+void mthread_exit(void *retval, int size);
