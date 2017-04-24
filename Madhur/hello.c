@@ -15,7 +15,7 @@
 
 
 #define MAX_STACK 1048576
-#define HOST "127.0.0.1"
+#define HOST "10.110.16.65"
 
 int cpid=0;
 int ppid=0;
@@ -51,7 +51,7 @@ void send_result(void *buf){
   	/* Set port number, using htons function to use proper byte order */
   	serverAddr.sin_port = htons(8554);
   	/* Set IP address to localhost */
-  	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  	serverAddr.sin_addr.s_addr = inet_addr("10.110.16.65");//M1 machine IP
   	/* Set all bits of the padding field to 0 */
   	//memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
 
@@ -171,6 +171,16 @@ int main(int argc, char const *argv[])
 	double answer = 0;
   signal(SIGUSR1,signal_child_handler);
 	for(iterator=0;iterator<=n;iterator++){
+    
+     int status;
+        
+      status = remove("myckpt");
+ 
+      if( status != 0 ){
+        printf("Unable to delete the file\n");
+        perror("Error");
+      }
+
     pid_t pid = fork();
         
 		if (pid == 0){
@@ -181,14 +191,14 @@ int main(int argc, char const *argv[])
       cpid=selfpid;
       //printf("child pid stored is %d and current pid is %d and parent pid is %d\n", cpid,getpid(),getppid());
       //printf("sending SIGUSR1 to parent\n");
-      int status;
+      /*int status;
         
       status = remove("myckpt");
  
       if( status != 0 ){
         printf("Unable to delete the file\n");
         perror("Error");
-      }
+      }*/
         
       kill(ppid,SIGUSR1);
       kill(getpid(),SIGTSTP);

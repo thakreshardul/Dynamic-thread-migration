@@ -19,7 +19,7 @@
 #include "parser.h"
 
 #define PORT 8555
-#define HOST "127.0.0.1"
+#define HOST "10.110.98.52" //M2 ka IP
 
 void error(const char *msg)
 {
@@ -44,7 +44,7 @@ void send_ckpt_to_server(){
 	memset(sendBuffer, '0', sizeof(sendBuffer));
 
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serv_addr.sin_addr.s_addr = inet_addr("10.110.98.52"); ////M2 ka IP
 	serv_addr.sin_port = htons(PORT);
 
 	
