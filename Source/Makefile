@@ -12,8 +12,8 @@ build-dirs:
 	mkdir -p $(LIBS) 
 
 lib-mThread: $(INCLUDE)/mThread.h $(SRC)/mThread.c
-	$(CC) -c -Wall -Werror -fpic -o $(BUILD)/mThread.o $(SRC)/mThread.c
-	$(CC) -shared -o $(LIBS)/libmThread.so $(BUILD)/mThread.o
+	$(CC) $(CFLAGS) -fpic -c -o $(BUILD)/mThread.o $(SRC)/mThread.c
+	$(CC) $(CFLAGS) -shared -fpic -o $(LIBS)/libmThread.so $(BUILD)/mThread.o
 
 lib-ckpt: ckpt.o
 	$(CC) -fno-stack-protector -shared -o $(LIBS)/libckpt.so $(BUILD)/ckpt.o
@@ -31,7 +31,8 @@ server: build-dirs restart $(SRC)/server.c
 	$(CC) $(CFLAGS) -o $(BUILD)/$@ $(SRC)/$@.c
 
 hello : build-dirs
-	$(CC) $(CFLAGS) -o $(BUILD)/$@ $(TEST)/$@.c
+	$(CC) $(CFLAGS) -c -o $(BUILD)/$@.o $(TEST)/$@.c 
+	$(CC) $(CFLAGS) -L$(LIBS) -o $(BUILD)/$@ $(BUILD)/$@.o -lmThread
 
 clean: 
 	rm -rf $(BUILD)
@@ -47,4 +48,4 @@ run-server:
 	$(BUILD)/server 8555
 
 run-test:
-	LD_PRELOAD=$(LIBS)/libckpt.so $(BUILD)/hello -lmThread
+	LD_PRELOAD="$(LIBS)/libckpt.so $(LIBS)/libmThread.so" $(BUILD)/hello -lmThread

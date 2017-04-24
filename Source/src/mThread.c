@@ -12,23 +12,9 @@
 #include <sched.h>
 #include <string.h>
 #include <stdio.h>
+#include <mThread.h>
 
 #define MEM 64000
-
-struct server{
-  char* IP;
-  int port;
-};
-typedef struct server server;
-
-struct mthread_t{
-  pid_t pid;
-  int sockID;
-};
-typedef struct mthread_t mthread_t;
-
-typedef	void * (*mthread_startroutine_t)(void *);
-typedef void * mthread_addr_t;
 
 
 // global data, common for all processes
@@ -38,9 +24,6 @@ static server** server_list;
 
 // process specific port for sending response
 static server* response_server;
-
-
-char *listen_for_result(int sockfd, struct sockaddr_in * cli_addr, socklen_t * clilen);
 
 
 void error(const char *msg)
@@ -87,15 +70,13 @@ void mthread_configure()
 int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_routine) (void *), void *arg)
 {
   mt = malloc(sizeof(mthread_t));
-  mt->pid = pid;
-
   process_count++;
 
   pid_t pid = fork();
   if (pid == 0){
         // choose server using mod %
 	int server_id = process_count % server_count;
-	response_server = server[server_id];
+	response_server = server_list[server_id];
 
 	// call the funtions requested to be run in thread
 	(*start_routine)(arg);
@@ -105,7 +86,7 @@ int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_rout
   }
   else{
 	int sockfd, portno;
-     	struct sockaddr_in serv_addr;
+     	struct sockaddr_in serv_addr, cli_addr;
 
      	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -122,7 +103,15 @@ int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_rout
      		error("ERROR on binding listener");
 
      	listen(sockfd,5);
-	mt->sockID = sockfd;
+
+	socklen_t clilen = sizeof(cli_addr);
+	int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+	if (newsockfd < 0) {
+      	  error("ERROR on accept");
+        }
+
+        mt->pid = pid;
+	mt->sockID = newsockfd;
   }
 
   return 0;
@@ -131,25 +120,13 @@ int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_rout
 
 int mthread_join(mthread_t* mt, void *retval)
 {
-  int newsockfd;
-  int listening = 1;
-  char *buffer;
-  do {
-    newsockfd = accept(sockfd, (struct sockaddr *) cli_addr, clilen);
-    if (newsockfd < 0) {
-      error("ERROR on accept");
-    }
-    size_t rd;
-    off_t size;
-    buffer = (char *)malloc(1024);
-    int n = read(newsockfd, buffer, 1024);
-    if (n < 0)
-      error("ERROR reading from socket");
-      listening--;
 
-  }while(listening);
-  
-  return buffer;
+  retval = malloc(1024);
+  int n = read(mt->sockID, retval, 1024);
+  if (n < 0)
+    error("ERROR reading from socket");
+
+  return 0;
 }
 
 
