@@ -36,8 +36,8 @@ void error(const char *msg)
 }
 
 
-int sockfd, portno;
-struct sockaddr_in serv_addr;
+static int sockfd;
+static struct sockaddr_in serv_addr;
 
 
 void mthread_configure()
@@ -80,10 +80,9 @@ void mthread_configure()
 	error("ERROR opening socket");
 
   bzero((char *) &serv_addr, sizeof(serv_addr));
-  portno = PORT;
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_addr.s_addr = INADDR_ANY;
-  serv_addr.sin_port = htons(portno);
+  serv_addr.sin_port = htons(PORT);
 
   if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
     error("ERROR on binding listener");
@@ -112,13 +111,13 @@ int mthread_create(mthread_t *mt, const mthread_attr_t *attr, void *(*start_rout
   pid_t pid = fork();
   if (pid == 0){
         int selfpid = getpid();
-        sleep(2);
+        sleep(1);
 	
  	// raise signal for checkpoint
 	raise(SIGUSR2);
-        sleep(2);
+	sleep(1);
 
-	status = remove("./bin/myckpt");
+	status = remove("./bin/myckpt0");
 	if(status != 0)
 	  perror("Error deleting checkpoint file in process 2");
 
@@ -146,18 +145,20 @@ int mthread_join(mthread_t* mt, void *retval)
   if (newsockfd < 0) {
      error("ERROR on accept");
   }
-  retval = malloc(1024);
-  int n = read(newsockfd, retval, 1024);
+  void *buffer = malloc(1024);
+  int n = read(newsockfd, buffer, 1024);
   if (n < 0)
     error("ERROR reading from socket");
-
+  memcpy(retval, buffer,n);
   return 0;
 }
 
 
 
-void mthread_exit(void *retval)
+void mthread_exit(void *retval, int size)
 {
+  printf("in mthread exit with retval %lf\n",*((double*)retval));
+  sleep(1);
   // sends result to parent process
   int clientSocket;
   struct sockaddr_in serverAddr;
@@ -166,12 +167,12 @@ void mthread_exit(void *retval)
   clientSocket = socket(PF_INET, SOCK_STREAM, 0);
   
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(response_server->port);
-  serverAddr.sin_addr.s_addr = inet_addr(response_server->IP);
+  serverAddr.sin_port = htons(PORT);
+  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
   addr_size = sizeof serverAddr;
   connect(clientSocket, (struct sockaddr *) &serverAddr, addr_size);
-  send(clientSocket, retval, strlen(retval), 0);
+  send(clientSocket, retval, size, 0);
 
   close(clientSocket);
 }

@@ -156,7 +156,7 @@ void dostuff (int sockfd)
 	//printf("In dostuff\n");
 
 	char recvBuffer[4096];
-	int fd = open("./bin/myckpt", O_APPEND | O_WRONLY | O_CREAT, S_IRWXU);
+	int fd = open("./bin/myckpt0", O_APPEND | O_WRONLY | O_CREAT, S_IRWXU);
 	
 	//printf("Opening myckpt0 file\n");
 	while((bytesReceived = read(sockfd, recvBuffer, 4096)) > 0)
@@ -172,7 +172,7 @@ void dostuff (int sockfd)
     //printf("count: %d\n",count);
 	//printf("on server forked child before exec pid is %d \n", getpid());
 	//return;
-    static char *arg[]={"restart","./bin/myckpt",NULL};
+    static char *arg[]={"restart","./bin/myckpt0",NULL};
     //printf("execing\n");
     printf("Checkpoint image restarted\n");
     execv("./bin/restart", arg);

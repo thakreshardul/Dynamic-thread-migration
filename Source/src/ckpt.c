@@ -78,6 +78,45 @@ void send_ckpt_to_server(){
 }
 */
 
+/*
+void select_server()
+{
+  
+  char* serv_1  = "127.0.0.1";
+  int port_1 = 7777;
+  server* server_1 = malloc(sizeof(server));
+  server_1->IP = malloc(strlen(serv_1)+1);
+  strcpy(server_1->IP, serv_1);
+  server_1->port = port_1;
+
+  char* serv_2  = "127.0.0.1";
+  int port_2 = 7778;
+  server* server_2 = malloc(sizeof(server));
+  server_2->IP = malloc(strlen(serv_2)+1);
+  strcpy(server_2->IP, serv_2);
+  server_2->port = port_2;
+
+  char* serv_3  = "127.0.0.1";
+  int port_3 = 7779;
+  server* server_3 = malloc(sizeof(server));
+  server_3->IP = malloc(strlen(serv_3)+1);
+  strcpy(server_3->IP, serv_3);
+  server_3->port = port_3;
+
+  // if you add more servers, increment this count 
+  // and add the servers to list
+  server_count = 3;
+
+  server_list = malloc(server_count * sizeof(server));
+  server_list[0] = server_1;
+  server_list[1] = server_2;
+  server_list[2] = server_3;
+
+  // choose server using mod %
+  int server_id = process_count % server_count;
+  response_server = server_list[server_id];
+}
+*/
 void send_ckpt_to_server(){
 	//printf("In send_ckpt_to_server\n");
 	int listenfd = 0;
